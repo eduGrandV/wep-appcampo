@@ -45,18 +45,3 @@ export default async function PaginaDeAnaliseEspecifica({ params }: any) {
   );
 }
 
-export async function generateStaticParams() {
-  const todasAsPlantas = await getPLantas();
-
-  const paramsList = Array.from(
-    new Set(todasAsPlantas.map(p =>
-      JSON.stringify({
-        centro: p.centroCusto,
-        data: new Date(p.criadoEm).toISOString().split('T')[0],
-        analise: encodeURIComponent(p.doencaOuPraga)
-      })
-    ))
-  ).map(s => JSON.parse(s));
-
-  return paramsList;
-}

@@ -4,20 +4,7 @@ import AnaliseDaVisita from "@/components/DoencasList";
 import { getPLantas } from "@/services/api";
 
 
-export async function generateStaticParams() {
-  const todasAsPlantas = await getPLantas();
 
-  const paramsList = Array.from(
-    new Set(todasAsPlantas.map(p =>
-      JSON.stringify({
-        centro: p.centroCusto,
-        data: new Date(p.criadoEm).toISOString().split('T')[0]
-      })
-    ))
-  ).map(s => JSON.parse(s));
-
-  return paramsList;
-}
 
 
 export default async function PaginaAnaliseDaVisita({ params }: any) {
