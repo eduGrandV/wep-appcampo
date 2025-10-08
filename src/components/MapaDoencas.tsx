@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import L, { FeatureGroup, Layer, LayerOptions } from "leaflet";
 import "leaflet.heat";
 import "leaflet.markercluster";
@@ -58,35 +58,86 @@ export default function MapaDoencas({ locais, hoveredCentro }: MapaDoencasProps)
   const clusterLayerRef = useRef<L.MarkerClusterGroup | null>(null);
   const highlightLayerRef = useRef<L.LayerGroup | null>(null);
   const layerControlRef = useRef<L.Control.Layers | null>(null);
+  const [isMapReady, setIsMapReady] = useState(false);
 
+  // Verificar se o container tem dimensões válidas
   useEffect(() => {
-    if (mapRef.current && !mapInstanceRef.current) {
-      const satelliteLayer = L.tileLayer("https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { attribution: "Tiles &copy; Esri" });
-      const streetLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' });
+    if (!mapRef.current) return;
 
-      const map = L.map(mapRef.current, {
-        layers: [satelliteLayer],
-        minZoom: 8,
-        maxZoom: 17,
-      });
+    const checkContainerSize = () => {
+      if (mapRef.current) {
+        const { width, height } = mapRef.current.getBoundingClientRect();
+        return width > 0 && height > 0;
+      }
+      return false;
+    };
 
-      mapInstanceRef.current = map;
-      highlightLayerRef.current = L.layerGroup().addTo(map);
-
-      const baseMaps = { "Satélite": satelliteLayer, "Ruas": streetLayer };
-      layerControlRef.current = L.control.layers(baseMaps).addTo(map);
+    // Tentar inicializar imediatamente
+    if (checkContainerSize()) {
+      setIsMapReady(true);
+      return;
     }
+
+    // Se não estiver pronto, aguardar um pouco e tentar novamente
+    const timer = setTimeout(() => {
+      if (checkContainerSize()) {
+        setIsMapReady(true);
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, []);
 
+  // Inicializar o mapa quando o container estiver pronto
+  useEffect(() => {
+    if (!isMapReady || !mapRef.current || mapInstanceRef.current) return;
+
+    const satelliteLayer = L.tileLayer("https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { 
+      attribution: "Tiles &copy; Esri" 
+    });
+    
+    const streetLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { 
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' 
+    });
+
+    const map = L.map(mapRef.current, {
+      layers: [satelliteLayer],
+      minZoom: 8,
+      maxZoom: 17,
+      // Prevenir erros de dimensão
+      preferCanvas: true
+    });
+
+    mapInstanceRef.current = map;
+    highlightLayerRef.current = L.layerGroup().addTo(map);
+
+    const baseMaps = { 
+      "Satélite": satelliteLayer, 
+      "Ruas": streetLayer 
+    };
+    
+    layerControlRef.current = L.control.layers(baseMaps).addTo(map);
+
+    // Forçar atualização do mapa após um breve delay
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 50);
+
+  }, [isMapReady]);
+
+  // Atualizar dados do mapa
   useEffect(() => {
     const map = mapInstanceRef.current;
     const layerControl = layerControlRef.current;
-    if (!map || !layerControl) return;
+    
+    if (!map || !layerControl || !isMapReady) return;
 
+    // Limpar layers existentes
     if (heatLayerRef.current) {
       map.removeLayer(heatLayerRef.current);
       layerControl.removeLayer(heatLayerRef.current);
     }
+    
     if (clusterLayerRef.current) {
       map.removeLayer(clusterLayerRef.current);
       layerControl.removeLayer(clusterLayerRef.current);
@@ -97,48 +148,94 @@ export default function MapaDoencas({ locais, hoveredCentro }: MapaDoencasProps)
       return;
     }
 
+    // Adicionar mapa de calor
     const heatData = locais.map((l) => [l.latitude, l.longitude, l.nota]);
-    heatLayerRef.current = (L as any).heatLayer(heatData, { radius: 25, blur: 20 });
+    heatLayerRef.current = (L as any).heatLayer(heatData, { 
+      radius: 25, 
+      blur: 20,
+      maxZoom: 17
+    });
 
-    // PRECISÃO (SPIDERFY): Ativando a opção spiderfyOnMaxZoom
+    // Adicionar cluster de marcadores
     clusterLayerRef.current = L.markerClusterGroup({
-        spiderfyOnMaxZoom: true,
-        showCoverageOnHover: false, // Opcional: desativa a área de cobertura no hover para um visual mais limpo
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      maxClusterRadius: 50
     });
 
     locais.forEach((l) => {
-        // PRECISÃO (POPUP): Trocando bindTooltip por bindPopup
-        const marker = L.marker([l.latitude, l.longitude], { icon: getMarkerIcon(l.nota) })
-            .bindPopup(`<strong>${l.doenca}</strong><br/>Quadrante: ${l.quadrante}<br/>Nota: ${l.nota}`);
+      const marker = L.marker([l.latitude, l.longitude], { 
+        icon: getMarkerIcon(l.nota) 
+      }).bindPopup(`
+        <div class="p-2">
+          <strong class="text-sm">${l.doenca}</strong><br/>
+          <span class="text-xs">Quadrante: ${l.quadrante}</span><br/>
+          <span class="text-xs">Nota: ${l.nota}</span>
+        </div>
+      `);
+      
       clusterLayerRef.current!.addLayer(marker);
     });
 
+    // Adicionar layers ao controle
     if (heatLayerRef.current) {
       layerControl.addOverlay(heatLayerRef.current, "Mapa de Calor");
     }
-    if(clusterLayerRef.current) {
-        layerControl.addOverlay(clusterLayerRef.current, "Pontos Agrupados");
-        map.addLayer(clusterLayerRef.current);
+    
+    if (clusterLayerRef.current) {
+      layerControl.addOverlay(clusterLayerRef.current, "Pontos Agrupados");
+      map.addLayer(clusterLayerRef.current);
     }
 
-    const bounds = L.latLngBounds(locais.map(l => [l.latitude, l.longitude]));
-    map.fitBounds(bounds, { padding: [50, 50] });
+    // Ajustar bounds apenas se houver locais
+    if (locais.length > 0) {
+      const bounds = L.latLngBounds(locais.map(l => [l.latitude, l.longitude]));
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
+    }
 
-  }, [locais]);
 
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 0);
+
+  }, [locais, isMapReady]);
+
+  // Efeito para highlight
   useEffect(() => {
     const highlightLayer = highlightLayerRef.current;
-    if (!highlightLayer) return;
+    if (!highlightLayer || !isMapReady) return;
+    
     highlightLayer.clearLayers();
+    
     if (hoveredCentro && locais.length > 0) {
       const locaisFiltrados = locais.filter(l => l.centroCusto === hoveredCentro);
       locaisFiltrados.forEach(l => {
         L.circleMarker([l.latitude, l.longitude], {
-          radius: 15, color: '#f97316', weight: 3, fill: false, interactive: false,
+          radius: 15, 
+          color: '#f97316', 
+          weight: 3, 
+          fill: false, 
+          interactive: false,
         }).addTo(highlightLayer);
       });
     }
-  }, [hoveredCentro, locais]);
+  }, [hoveredCentro, locais, isMapReady]);
 
-  return <div ref={mapRef} className="h-full w-full bg-gray-800"></div>;
+
+  useEffect(() => {
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, []);
+
+  return (
+    <div 
+      ref={mapRef} 
+      className="h-full w-full bg-gray-800"
+      style={{ minHeight: '600px' }}
+    />
+  );
 }

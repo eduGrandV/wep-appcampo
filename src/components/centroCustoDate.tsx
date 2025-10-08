@@ -1,4 +1,3 @@
-//new
 "use client";
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -75,7 +74,6 @@ export default function PaginaDatasDoCentroDeCusto({ centro }: PaginaDatasProps)
 
         const itemDate = new Date(item.criadoEm);
         
-        // CORREÇÃO: Trata as datas de filtro como UTC para evitar problemas de fuso horário
         const startDate = new Date(filtroDataInicio + 'T00:00:00Z');
         const endDate = new Date(filtroDataFim + 'T23:59:59Z');
 
@@ -110,75 +108,146 @@ export default function PaginaDatasDoCentroDeCusto({ centro }: PaginaDatasProps)
 
 
 
-  return (
+return (
     <>
-        <main className="p-6 md:p-8 min-h-screen bg-gradient-to-br from-gray-900 via-green-900 to-gray-900">
-            
-            <button onClick={() => router.back()} className="text-gray-300 hover:text-white mb-6 bg-white/5 px-4 py-2 rounded-lg">
-                &larr; Voltar para o painel
-            </button>
-            <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">{nomeCentroCusto}</h1>
-            {numeroLote && (
-                <p className="text-lg text-gray-300">
-                    Qtde. Planta: <span className="font-semibold text-white">{numeroLote}</span>
-                </p>
-            )}
-            <p className="text-gray-400 mb-8">Cada card representa um dia de inspeção. Clique para ver os detalhes.</p>
-
-            <div className="flex flex-col sm:flex-row gap-4 mb-8 p-4 bg-black/20 rounded-lg border border-white/10 items-end">
-                <div className="flex-1">
-                    <label htmlFor="startDate" className="block text-xs font-medium text-gray-400 mb-1">Data Inicial</label>
-                    <input 
-                        type="date" 
-                        id="startDate"
-                        value={filtroDataInicio} 
-                        onChange={(e) => setFiltroDataInicio(e.target.value)}
-                        className="w-full bg-gray-800 border-gray-600 text-white text-sm rounded-lg p-2"
-                    />
-                </div>
-                <div className="flex-1">
-                    <label htmlFor="endDate" className="block text-xs font-medium text-gray-400 mb-1">Data Final</label>
-                    <input 
-                        type="date" 
-                        id="endDate"
-                        value={filtroDataFim} 
-                        onChange={(e) => setFiltroDataFim(e.target.value)}
-                        className="w-full bg-gray-800 border-gray-600 text-white text-sm rounded-lg p-2"
-                    />
-                </div>
-                <div className="w-full sm:w-auto">
+        <main className="min-h-screen bg-gradient-to-br from-gray-900 via-green-900 to-gray-900">
+            {/* Header Section */}
+            <div className="p-6 lg:p-8 border-b border-white/10">
+                <div className="max-w-7xl mx-auto">
                     <button 
-                        onClick={() => setIsModalOpen(true)}
-                        className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                        onClick={() => router.back()} 
+                        className="inline-flex items-center gap-2 text-gray-300 hover:text-white mb-6 bg-white/10 hover:bg-white/20 px-4 py-3 rounded-xl transition-all duration-200 group"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" /><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" /></svg>
-                        Análise Geral
+                        <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        Voltar para o painel
                     </button>
+
+                    <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+                        <div className="flex-1">
+                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2 leading-tight">
+                                {nomeCentroCusto}
+                            </h1>
+                            <div className="flex flex-wrap items-center gap-4 text-gray-300">
+                                {numeroLote && (
+                                    <div className="flex items-center gap-2 bg-black/30 px-3 py-1 rounded-lg">
+                                        <span className="text-green-400">🌿</span>
+                                        <span className="text-sm">
+                                            Qtde. Plantas: <span className="font-semibold text-white">{numeroLote}</span>
+                                        </span>
+                                    </div>
+                                )}
+                                <div className="flex items-center gap-2 text-sm text-gray-400">
+                                    <span>📅</span>
+                                    <span>Clique em um card para ver os detalhes da visita</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Filtros e Análise Geral */}
+                        <div className="bg-black/20 rounded-xl p-4 border border-white/10">
+                            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
+                                    <div>
+                                        <label htmlFor="startDate" className="block text-xs font-medium text-gray-400 mb-2">
+                                            Data Inicial
+                                        </label>
+                                        <input 
+                                            type="date" 
+                                            id="startDate"
+                                            value={filtroDataInicio} 
+                                            onChange={(e) => setFiltroDataInicio(e.target.value)}
+                                            className="w-full bg-gray-800/50 border border-gray-600 text-white text-sm rounded-lg px-3 py-2 focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-colors"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="endDate" className="block text-xs font-medium text-gray-400 mb-2">
+                                            Data Final
+                                        </label>
+                                        <input 
+                                            type="date" 
+                                            id="endDate"
+                                            value={filtroDataFim} 
+                                            onChange={(e) => setFiltroDataFim(e.target.value)}
+                                            className="w-full bg-gray-800/50 border border-gray-600 text-white text-sm rounded-lg px-3 py-2 focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-colors"
+                                        />
+                                    </div>
+                                </div>
+                                
+                                <button 
+                                    onClick={() => setIsModalOpen(true)}
+                                    className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-200 hover:scale-105 min-w-[140px]"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" />
+                                        <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" />
+                                    </svg>
+                                    Análise Geral
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {visitasPorData.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-                    {visitasPorData.map(({ dataISO, dataExibicao, count }) => (
-                        <div 
-                            key={dataISO} 
-                            onClick={() => handleDataClick(dataISO)} 
-                            className="flex flex-col justify-center items-center bg-gray-900/50 border border-transparent rounded-2xl p-6 cursor-pointer text-center hover:border-green-400/80 transition-all"
-                        >
-                            <p className="text-sm text-gray-300">Data da Visita</p>
-                            <h3 className="text-2xl font-bold text-white mb-2">{dataExibicao}</h3>
-                            <p className="text-sm text-gray-300">Registros: <span className="font-semibold text-white">{count}</span></p>
+            {/* Visitas Grid */}
+            <div className="p-6 lg:p-8">
+                <div className="max-w-7xl mx-auto">
+                    {visitasPorData.length > 0 ? (
+                        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+                            {visitasPorData.map(({ dataISO, dataExibicao, count }) => (
+                                <div 
+                                    key={dataISO} 
+                                    onClick={() => handleDataClick(dataISO)} 
+                                    className="group relative bg-gradient-to-br from-gray-800/50 to-gray-900/70 border border-gray-700 rounded-2xl p-5 cursor-pointer text-center hover:border-green-400/60 hover:shadow-2xl hover:shadow-green-500/10 transition-all duration-300 hover:scale-105 backdrop-blur-sm overflow-hidden"
+                                >
+                                    {/* Efeito de brilho no hover */}
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                                    
+                                    <div className="relative z-10">
+                                        <p className="text-xs font-medium text-gray-400 mb-2 uppercase tracking-wide">
+                                            Data da Visita
+                                        </p>
+                                        <h3 className="text-xl sm:text-2xl font-bold text-white mb-3 font-mono">
+                                            {dataExibicao}
+                                        </h3>
+                                        <div className="inline-flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-full border border-gray-600/50">
+                                            <span className="text-green-400 text-sm">📊</span>
+                                            <span className="text-sm text-gray-300">
+                                                <span className="font-semibold text-white">{count}</span> registro{count !== 1 ? 's' : ''}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Indicador de clique */}
+                                    <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                        <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    ))}
+                    ) : (
+                        <div className="text-center py-16 lg:py-24">
+                            <div className="max-w-md mx-auto">
+                                <div className="w-20 h-20 mx-auto mb-4 bg-gray-800/50 rounded-full flex items-center justify-center">
+                                    <svg className="w-10 h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                    </svg>
+                                </div>
+                                <h3 className="text-lg font-semibold text-gray-300 mb-2">Nenhuma visita encontrada</h3>
+                                <p className="text-gray-500 text-sm">
+                                    Não há visitas registradas para este centro de custo no período selecionado.
+                                </p>
+                            </div>
+                        </div>
+                    )}
                 </div>
-            ) : (
-                <div className="text-center text-gray-400 mt-16">
-                    <p>Nenhuma visita registrada para este centro de custo no período selecionado.</p>
-                </div>
-            )}
+            </div>
         </main>
 
-      
         <ModalAnaliseLote
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}

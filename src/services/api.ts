@@ -13,30 +13,32 @@ export async function getPLantas(): Promise<Planta[]> {
 
 
 
-export async function loginUser(credentials: LoginCredentials): Promise<void> {
-  const res = await fetch(`${BASE_URL}/plantas/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      email: credentials.email,
-      senha: credentials.password,
-    }),
-    credentials: 'include', // 👈 permite que o cookie HttpOnly venha na resposta
-  });
 
-  if (!res.ok) {
-    let errorMessage = `Erro do servidor: ${res.status}`;
-    try {
-      const errorData = await res.json();
-      errorMessage = errorData.error || errorMessage;
-    } catch {
-      // ignora erro ao tentar ler JSON
+interface LoginResponse {
+  message: string;
+  userId: number;
+}
+
+export async function loginUser(credentials: LoginCredentials): Promise<LoginResponse> {
+    // Garante que está chamando a rota /login correta
+    const res = await fetch(`${BASE_URL}/plantas/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            email: credentials.email,
+            senha: credentials.password,
+        }),
+        credentials: 'include',
+    });
+
+    // Se a resposta não for OK (ex: 401 Credenciais inválidas), lança um erro
+    if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || `Erro: ${res.statusText}`);
     }
-    throw new Error(errorMessage);
-  }
-
-
-  return;
+    
+    // Se a resposta for OK, retorna o corpo do JSON (ex: { message: '...', userId: ... })
+    return await res.json();
 }
 
 

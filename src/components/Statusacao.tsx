@@ -1,9 +1,18 @@
-// Arquivo: src/components/Statusacao.tsx
 
 "use client";
 import { useMemo } from "react";
 import { RegraAcao, TipoProblema } from "@/data/localPlanta"; 
-import { Resultado } from "./AnaliseDaVisita";
+
+export interface Resultado {
+    nome: string;
+    tipo: TipoProblema;
+    orgao: string | null;
+    percentual?: number;
+    percentualBordadura?: number;
+    percentualAreaInterna?: number;
+    mediaGeral?: number;
+    contagemPresenca?: number;
+}
 
 interface StatusAcaoProps {
     resultado: Resultado;
