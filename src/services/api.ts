@@ -1,6 +1,6 @@
 import { LoginCredentials, Planta, User } from "@/types/types"
 
-const BASE_URL = 'http://192.168.253.9:3000'
+const BASE_URL = 'http://192.168.253.9:3001'
 
 export async function getPLantas(): Promise<Planta[]> {
     const res = await fetch(`${BASE_URL}/plantas/`)
@@ -20,7 +20,6 @@ interface LoginResponse {
 }
 
 export async function loginUser(credentials: LoginCredentials): Promise<LoginResponse> {
-    // Garante que está chamando a rota /login correta
     const res = await fetch(`${BASE_URL}/plantas/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -31,13 +30,11 @@ export async function loginUser(credentials: LoginCredentials): Promise<LoginRes
         credentials: 'include',
     });
 
-    // Se a resposta não for OK (ex: 401 Credenciais inválidas), lança um erro
     if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || `Erro: ${res.statusText}`);
     }
     
-    // Se a resposta for OK, retorna o corpo do JSON (ex: { message: '...', userId: ... })
     return await res.json();
 }
 
